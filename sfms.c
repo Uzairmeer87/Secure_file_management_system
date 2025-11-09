@@ -202,3 +202,34 @@ void displayUserMenu() {
     printf(GREEN "5. " RESET "Modify File\n");
     printf(CYAN "===========================================\n" RESET);
 }
+
+int isValidPassword(const char *password) {
+    if (strlen(password) < 8) return 0;
+    int hasUpper = 0, hasLower = 0, hasDigit = 0, hasSpecial = 0;
+    for (int i = 0; password[i]; i++) {
+        if (isupper((unsigned char)password[i])) hasUpper = 1;
+        else if (islower((unsigned char)password[i])) hasLower = 1;
+        else if (isdigit((unsigned char)password[i])) hasDigit = 1;
+       
+        else if (isprint((unsigned char)password[i]) && !isalnum((unsigned char)password[i])) hasSpecial = 1;
+    }
+    return hasUpper && hasLower && hasDigit && hasSpecial;
+}
+
+void getPasswordInput(char *password) {
+    int i = 0;
+    int ch;
+  
+    while ((ch = _getch()) != '\r' && i < MAX - 1) {
+        if (ch == 8) { 
+            if (i > 0) {
+                i--;
+                printf("\b \b"); 
+            }
+        } else if (isprint((unsigned char)ch)) { 
+            password[i++] = ch;
+            printf("*");
+        }
+    }
+    password[i] = '\0'; 
+    printf("\n"); 
