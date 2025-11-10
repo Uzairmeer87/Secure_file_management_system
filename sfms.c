@@ -315,3 +315,83 @@ void modifyFile() {
         printf(YELLOW "\nNo changes made.\n" RESET);
     }
 }
+
+void enableANSIColors() {
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hOut == INVALID_HANDLE_VALUE) return;
+
+    DWORD dwMode = 0;
+    if (!GetConsoleMode(hOut, &dwMode)) return;
+
+    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    if (!SetConsoleMode(hOut, dwMode)) {
+       
+    }
+}
+
+int registerUser() {
+    char uname[MAX], pwd[MAX];
+    printf(YELLOW "\n--- Register New User ---\n" RESET);
+    printf(YELLOW "Enter username: " RESET);
+    fgets(uname, MAX, stdin);
+    uname[strcspn(uname, "\n")] = 0;
+
+   
+    FILE *fr = fopen("users.txt", "r");
+    if (fr) {
+        char fileU[MAX], fileP[MAX];
+        while (fscanf(fr, "%99s %99s", fileU, fileP) == 2) {
+            if (strcmp(fileU, uname) == 0) {
+                printf(RED "\n✘ Username '%s' already exists.\n" RESET, uname);
+                fclose(fr);
+                return 0;
+            }
+        }
+        fclose(fr);
+    }
+
+    while (1) {
+        printf(YELLOW "Enter password (min 8 chars, needs upper, lower, digit, special): " RESET);
+        getPasswordInput(pwd);
+        if (isValidPassword(pwd)) {
+            FILE *f = fopen("users.txt", "a");
+            if (f) {
+                fprintf(f, "%s %s\n", uname, pwd); 
+                fclose(f);
+                return 1;
+            } else {
+                printf(RED "\n✘ Error saving user data.\n" RESET);
+                return 0;
+            }
+        } else {
+            printf(RED "\n✘ Password must be at least 8 chars and include uppercase, lowercase, digit, and a special character.\n" RESET);
+        }
+    }
+}
+
+int loginUser() {
+    char uname[MAX], pwd[MAX], fileU[MAX], fileP[MAX];
+    printf(YELLOW "\n--- Login ---\n" RESET);
+    printf(YELLOW "Enter username: " RESET);
+    fgets(uname, MAX, stdin);
+    uname[strcspn(uname, "\n")] = 0;
+
+    printf(YELLOW "Enter password: " RESET);
+    getPasswordInput(pwd);
+
+    FILE *f = fopen("users.txt", "r");
+    if (!f) {
+        printf(RED "No user data found. Please register.\n" RESET);
+        return 0;
+    }
+
+    while (fscanf(f, "%99s %99s", fileU, fileP) == 2) {
+        if (strcmp(fileU, uname) == 0 && strcmp(fileP, pwd) == 0) {
+            fclose(f);
+            return 1; 
+        }
+    }
+
+    fclose(f);
+    return 0; 
+}
