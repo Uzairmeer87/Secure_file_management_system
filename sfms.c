@@ -233,3 +233,85 @@ void getPasswordInput(char *password) {
     }
     password[i] = '\0'; 
     printf("\n"); 
+
+
+void viewMetadata(const char *filename) {
+#if defined(_MSC_VER)
+    struct _stat64 info; 
+    if (_stat64(filename, &info) == 0) {
+#else
+    struct stat info;
+    if (stat(filename, &info) == 0) {
+#endif
+        const char *ext = strrchr(filename, '.');
+        if (ext) {
+            ext++; 
+        } else {
+            ext = "No extension";
+        }
+
+        printf(YELLOW "\n--- File Metadata ---\n" RESET);
+        printf(BLUE "Name: " RESET "%s\n", filename);
+        printf(BLUE "Type: " RESET "%s\n", ext);
+        printf(BLUE "Size: " RESET "%lld bytes\n", (long long)info.st_size);
+        // Time conversion
+        char timeBuf[26];
+        format_time_s(timeBuf, sizeof(timeBuf), &info.st_mtime);
+        printf(BLUE "Last Modified: " RESET "%s", timeBuf);
+        format_time_s(timeBuf, sizeof(timeBuf), &info.st_atime);
+        printf(BLUE "Last Accessed: " RESET "%s", timeBuf);
+    } else {
+        int err = errno;
+        printf(RED "\n✘ Error retrieving metadata: %s\n" RESET, strerror(err));
+    }
+}
+
+void modifyFile() {
+    char oldName[MAX], newName[MAX], newContent[MAX];
+    printf(CYAN "\nEnter existing file name: " RESET);
+    fgets(oldName, MAX, stdin);
+    oldName[strcspn(oldName, "\n")] = 0;
+
+    FILE *fp = fopen(oldName, "r");
+    if (!fp) {
+        printf(RED "\n✘ File not found!\n" RESET);
+        return;
+    }
+    fclose(fp);
+
+    printf(YELLOW "Enter new filename (or press enter to skip): " RESET);
+    fgets(newName, MAX, stdin);
+    newName[strcspn(newName, "\n")] = 0;
+
+    printf(YELLOW "Enter new content (or press enter to skip): " RESET);
+    fgets(newContent, MAX, stdin);
+    newContent[strcspn(newContent, "\n")] = 0;
+
+    int renamed = 0;
+    if (strlen(newName) > 0) {
+        if (rename(oldName, newName) == 0) {
+            printf(GREEN "\n✔ File renamed to '%s'.\n" RESET, newName);
+            safe_strcpy(oldName, MAX, newName);
+            renamed = 1;
+        } else {
+            int err = errno;
+            printf(RED "\n✘ Error renaming file: %s\n" RESET, strerror(err));
+        }
+    }
+
+    if (strlen(newContent) > 0) {
+        FILE *fw = fopen(oldName, "w"); 
+        if (fw) {
+            fputs(newContent, fw);
+            fclose(fw);
+            printf(GREEN "\n✔ File content modified successfully.\n" RESET);
+        } else {
+            printf(RED "\n✘ Failed to write new content.\n" RESET);
+        }
+    } else if (renamed) {
+       
+        printf(GREEN "\n✔ File modified successfully.\n" RESET);
+    } else if (strlen(newName) == 0 && strlen(newContent) == 0) {
+        printf(YELLOW "\nNo changes made.\n" RESET);
+    }
+}
