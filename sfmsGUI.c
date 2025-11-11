@@ -165,3 +165,146 @@ void showFileMetadata(const char* filename, HWND hwnd) {
     
     showMessage(hwnd, "File Metadata", msg, 0);
 }
+
+void writeToFile(const char* filename, const char* content) {
+    FILE* f = fopen(filename, "w");
+    if (f) {
+        fputs(content, f);
+        fclose(f);
+    }
+}
+
+char* readFromFile(const char* filename) {
+    FILE* f = fopen(filename, "r");
+    if (!f) return NULL;
+    
+    fseek(f, 0, SEEK_END);
+    long size = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    
+    char* buffer = (char*)malloc(size + 1);
+    if (!buffer) {
+        fclose(f);
+        return NULL;
+    }
+    
+    fread(buffer, 1, size, f);
+    buffer[size] = '\0';
+    fclose(f);
+    return buffer;
+}
+
+void modifyFileContent(const char* oldName, const char* newName, const char* newContent) {
+    FILE* f = fopen(oldName, "r");
+    if (!f) return;
+    fclose(f);
+    
+    if (strlen(newName) > 0) {
+        if (rename(oldName, newName) != 0) {
+            return;
+        }
+    }
+    
+    const char* targetFile = (strlen(newName) > 0) ? newName : oldName;
+    if (strlen(newContent) > 0) {
+        FILE* fw = fopen(targetFile, "w");
+        if (fw) {
+            fputs(newContent, fw);
+            fclose(fw);
+        }
+    }
+}
+
+LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    switch (msg) {
+        case WM_DESTROY:
+            PostQuitMessage(0);
+            return 0;
+    }
+    return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
+LRESULT CALLBACK LoginWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    static HWND hUsernameEdit = NULL;
+    static HWND hPasswordEdit = NULL;
+    static HWND hLoginBtn = NULL;
+    static HWND hRegisterBtn = NULL;
+    static HWND hExitBtn = NULL;
+    static HWND hTitleLabel = NULL;
+    static HBRUSH hBgBrush = NULL;
+    
+    switch (msg) {
+        case WM_CREATE: {
+            hBgBrush = CreateSolidBrush(COLOR_BG);
+            
+            hTitleLabel = CreateWindow("STATIC", "Secure File Management", 
+                                      WS_VISIBLE | WS_CHILD | SS_CENTER,
+                                      20, 25, 340, 35, hwnd, NULL, NULL, NULL);
+            if (g_hTitleFont) {
+                SendMessage(hTitleLabel, WM_SETFONT, (WPARAM)g_hTitleFont, TRUE);
+            }
+            
+            createLabel(hwnd, "Username:", 50, 75, 100, 25);
+            hUsernameEdit = createEdit(hwnd, 50, 100, 280, 30, ID_EDIT_USERNAME, 0);
+            
+            createLabel(hwnd, "Password:", 50, 140, 100, 25);
+            hPasswordEdit = createEdit(hwnd, 50, 165, 280, 30, ID_EDIT_PASSWORD, 1);
+            
+            hLoginBtn = createModernButton(hwnd, "Login", 50, 215, 100, 40, ID_BTN_SUBMIT_LOGIN);
+            hRegisterBtn = createModernButton(hwnd, "Register", 160, 215, 100, 40, ID_BTN_REGISTER);
+            hExitBtn = createModernButton(hwnd, "Exit", 270, 215, 60, 40, ID_BTN_EXIT);
+            
+            SetFocus(hUsernameEdit);
+            return 0;
+        }
+        
+        case WM_DESTROY: {
+            if (hBgBrush) {
+                DeleteObject(hBgBrush);
+                hBgBrush = NULL;
+            }
+            return 0;
+        }
+        
+        case WM_COMMAND: {
+            if (LOWORD(wParam) == ID_BTN_SUBMIT_LOGIN) {
+                char username[MAX] = {0};
+                char password[MAX] = {0};
+                
+                GetWindowText(hUsernameEdit, username, MAX);
+                GetWindowText(hPasswordEdit, password, MAX);
+                
+                if (strlen(username) == 0 || strlen(password) == 0) {
+                    showMessage(hwnd, "Error", "Please enter both username and password.", 1);
+                    return 0;
+                }
+                
+                if (verifyLogin(username, password)) {
+                    g_isLoggedIn = 1;
+                    ShowWindow(hwnd, SW_HIDE);
+                    createMainMenuWindow();
+                } else {
+                    showMessage(hwnd, "Login Failed", "Invalid username or password.", 1);
+                }
+                return 0;
+            }
+            
+            if (LOWORD(wParam) == ID_BTN_REGISTER) {
+                ShowWindow(hwnd, SW_HIDE);
+                createRegisterWindow();
+                return 0;
+            }
+            
+            if (LOWORD(wParam) == ID_BTN_EXIT) {
+                PostQuitMessage(0);
+                return 0;
+            }
+            break;
+        }
+        
+        case WM_CLOSE:
+            PostQuitMessage(0);
+            return 0;
+    }
+    return DefWindowProc(hwnd, msg, wParam, lParam);
+}
