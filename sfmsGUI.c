@@ -487,3 +487,85 @@ LRESULT CALLBACK MainMenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
     }
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
+LRESULT CALLBACK FileOpWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    static HWND hFilenameEdit = NULL;
+    static HWND hContentEdit = NULL;
+    static HWND hNewFilenameEdit = NULL;
+    static HWND hNewContentEdit = NULL;
+    static HWND hDisplayStatic = NULL;
+    static HWND hSubmitBtn = NULL;
+    static HWND hCloseBtn = NULL;
+    static HWND hTitleLabel = NULL;
+    static char operation[20] = {0};
+    static HBRUSH hBgBrush = NULL;
+    
+    switch (msg) {
+        case WM_CREATE: {
+            hBgBrush = CreateSolidBrush(COLOR_BG);
+            
+            CREATESTRUCT* cs = (CREATESTRUCT*)lParam;
+            if (cs->lpCreateParams) {
+                strcpy(operation, (char*)cs->lpCreateParams);
+            }
+            
+            char title[50];
+            sprintf(title, "%s File", operation);
+            hTitleLabel = CreateWindow("STATIC", title, WS_VISIBLE | WS_CHILD | SS_CENTER,
+                                     20, 15, 300, 30, hwnd, NULL, NULL, NULL);
+            if (g_hTitleFont) {
+                SendMessage(hTitleLabel, WM_SETFONT, (WPARAM)g_hTitleFont, TRUE);
+            }
+            
+            createLabel(hwnd, "Filename:", 30, 55, 100, 25);
+            hFilenameEdit = createEdit(hwnd, 30, 80, 300, 30, ID_EDIT_FILENAME, 0);
+            
+            if (strcmp(operation, "Write") == 0) {
+                createLabel(hwnd, "Content:", 30, 120, 100, 25);
+                
+                hContentEdit = CreateWindow("EDIT", "", 
+                                           WS_VISIBLE | WS_CHILD | WS_BORDER | ES_LEFT | 
+                                           ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL,
+                                           30, 145, 300, 120, hwnd, (HMENU)(INT_PTR)ID_EDIT_CONTENT, NULL, NULL);
+                if (g_hFont) {
+                    SendMessage(hContentEdit, WM_SETFONT, (WPARAM)g_hFont, TRUE);
+                }
+                
+                hSubmitBtn = createModernButton(hwnd, "Create File", 30, 280, 130, 40, ID_BTN_SUBMIT_LOGIN);
+                hCloseBtn = createModernButton(hwnd, "Close", 200, 280, 130, 40, ID_BTN_EXIT);
+            }
+            else if (strcmp(operation, "Read") == 0) {
+                hDisplayStatic = CreateWindow("EDIT", "", 
+                                             WS_VISIBLE | WS_CHILD | WS_BORDER | ES_LEFT | 
+                                             ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_VSCROLL,
+                                             30, 120, 300, 150, hwnd, (HMENU)(INT_PTR)ID_STATIC_DISPLAY, NULL, NULL);
+                if (g_hFont) {
+                    SendMessage(hDisplayStatic, WM_SETFONT, (WPARAM)g_hFont, TRUE);
+                }
+                
+                hSubmitBtn = createModernButton(hwnd, "Read File", 30, 280, 130, 40, ID_BTN_SUBMIT_LOGIN);
+                hCloseBtn = createModernButton(hwnd, "Close", 200, 280, 130, 40, ID_BTN_EXIT);
+            }
+            else if (strcmp(operation, "Metadata") == 0) {
+                hSubmitBtn = createModernButton(hwnd, "View Metadata", 30, 120, 300, 40, ID_BTN_SUBMIT_LOGIN);
+                hCloseBtn = createModernButton(hwnd, "Close", 30, 170, 300, 40, ID_BTN_EXIT);
+            }
+            else if (strcmp(operation, "Modify") == 0) {
+                createLabel(hwnd, "New Filename (optional):", 30, 120, 200, 25);
+                hNewFilenameEdit = createEdit(hwnd, 30, 145, 300, 30, ID_EDIT_NEWFILENAME, 0);
+                
+                createLabel(hwnd, "New Content (optional):", 30, 185, 200, 25);
+                hNewContentEdit = CreateWindow("EDIT", "", 
+                                              WS_VISIBLE | WS_CHILD | WS_BORDER | ES_LEFT | 
+                                              ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL,
+                                              30, 210, 300, 100, hwnd, (HMENU)(INT_PTR)ID_EDIT_NEWCONTENT, NULL, NULL);
+                if (g_hFont) {
+                    SendMessage(hNewContentEdit, WM_SETFONT, (WPARAM)g_hFont, TRUE);
+                }
+                
+                hSubmitBtn = createModernButton(hwnd, "Modify File", 30, 320, 130, 40, ID_BTN_SUBMIT_LOGIN);
+                hCloseBtn = createModernButton(hwnd, "Close", 200, 320, 130, 40, ID_BTN_EXIT);
+            }
+            
+            SetFocus(hFilenameEdit);
+            return 0;
+        }
