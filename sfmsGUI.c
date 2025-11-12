@@ -308,3 +308,182 @@ LRESULT CALLBACK LoginWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     }
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
+LRESULT CALLBACK RegisterWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    static HWND hUsernameEdit = NULL;
+    static HWND hPasswordEdit = NULL;
+    static HWND hRegisterBtn = NULL;
+    static HWND hBackBtn = NULL;
+    static HWND hTitleLabel = NULL;
+    static HBRUSH hBgBrush = NULL;
+    
+    switch (msg) {
+        case WM_CREATE: {
+            hBgBrush = CreateSolidBrush(COLOR_BG);
+            
+            hTitleLabel = CreateWindow("STATIC", "Create New Account", 
+                                      WS_VISIBLE | WS_CHILD | SS_CENTER,
+                                      20, 20, 340, 30, hwnd, NULL, NULL, NULL);
+            if (g_hTitleFont) {
+                SendMessage(hTitleLabel, WM_SETFONT, (WPARAM)g_hTitleFont, TRUE);
+            }
+            
+            createLabel(hwnd, "Username:", 30, 65, 100, 25);
+            hUsernameEdit = createEdit(hwnd, 30, 90, 300, 30, ID_EDIT_USERNAME, 0);
+            
+            createLabel(hwnd, "Password:", 30, 135, 100, 25);
+            HWND pwdHint = CreateWindow("STATIC", 
+                                       "Min 8 chars: upper, lower, digit, special char", 
+                                       WS_VISIBLE | WS_CHILD | SS_LEFT,
+                                       30, 155, 300, 40, hwnd, NULL, NULL, NULL);
+            if (g_hFont) {
+                SendMessage(pwdHint, WM_SETFONT, (WPARAM)g_hFont, TRUE);
+            }
+            
+            hPasswordEdit = createEdit(hwnd, 30, 195, 300, 30, ID_EDIT_PASSWORD, 1);
+            
+            hRegisterBtn = createModernButton(hwnd, "Register", 30, 245, 120, 40, ID_BTN_SUBMIT_REGISTER);
+            hBackBtn = createModernButton(hwnd, "Back to Login", 170, 245, 160, 40, ID_BTN_LOGIN);
+            
+            SetFocus(hUsernameEdit);
+            return 0;
+        }
+        
+        case WM_CTLCOLORSTATIC: {
+            HDC hdc = (HDC)wParam;
+            SetTextColor(hdc, COLOR_TEXT);
+            SetBkColor(hdc, COLOR_BG);
+            return (LRESULT)hBgBrush;
+        }
+        
+        case WM_CTLCOLOREDIT: {
+            HDC hdc = (HDC)wParam;
+            SetBkColor(hdc, RGB(255, 255, 255));
+            return (LRESULT)GetStockObject(WHITE_BRUSH);
+        }
+        
+        case WM_DESTROY: {
+            if (hBgBrush) {
+                DeleteObject(hBgBrush);
+                hBgBrush = NULL;
+            }
+            return 0;
+        }
+        
+        case WM_COMMAND: {
+            if (LOWORD(wParam) == ID_BTN_SUBMIT_REGISTER) {
+                char username[MAX] = {0};
+                char password[MAX] = {0};
+                
+                GetWindowText(hUsernameEdit, username, MAX);
+                GetWindowText(hPasswordEdit, password, MAX);
+                
+                if (strlen(username) == 0 || strlen(password) == 0) {
+                    showMessage(hwnd, "Error", "Please enter both username and password.", 1);
+                    return 0;
+                }
+                
+                if (checkUserExists(username)) {
+                    showMessage(hwnd, "Error", "Username already exists. Please choose another.", 1);
+                    return 0;
+                }
+                
+                if (!validatePassword(password)) {
+                    showMessage(hwnd, "Invalid Password", 
+                               "Password must be at least 8 characters and include uppercase, lowercase, digit, and special character.", 
+                               1);
+                    return 0;
+                }
+                
+                saveUser(username, password);
+                showMessage(hwnd, "Success", "Registration successful! Please login.", 0);
+                ShowWindow(hwnd, SW_HIDE);
+                createLoginWindow();
+                return 0;
+            }
+            
+            if (LOWORD(wParam) == ID_BTN_LOGIN) {
+                ShowWindow(hwnd, SW_HIDE);
+                createLoginWindow();
+                return 0;
+            }
+            break;
+        }
+        
+        case WM_CLOSE:
+            PostQuitMessage(0);
+            return 0;
+    }
+    return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
+LRESULT CALLBACK MainMenuWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    static HWND hTitleLabel = NULL;
+    static HBRUSH hBgBrush = NULL;
+    
+    switch (msg) {
+        case WM_CREATE: {
+            hBgBrush = CreateSolidBrush(COLOR_BG);
+            
+            hTitleLabel = CreateWindow("STATIC", "File Management Menu", 
+                                      WS_VISIBLE | WS_CHILD | SS_CENTER,
+                                      20, 25, 380, 35, hwnd, NULL, NULL, NULL);
+            if (g_hTitleFont) {
+                SendMessage(hTitleLabel, WM_SETFONT, (WPARAM)g_hTitleFont, TRUE);
+            }
+            
+            createModernButton(hwnd, "Write File", 50, 80, 160, 45, ID_BTN_WRITE);
+            createModernButton(hwnd, "Read File", 230, 80, 160, 45, ID_BTN_READ);
+            createModernButton(hwnd, "View Metadata", 50, 140, 160, 45, ID_BTN_METADATA);
+            createModernButton(hwnd, "Modify File", 230, 140, 160, 45, ID_BTN_MODIFY);
+            createModernButton(hwnd, "Logout", 140, 200, 160, 45, ID_BTN_LOGOUT);
+            return 0;
+        }
+        
+        case WM_CTLCOLORSTATIC: {
+            HDC hdc = (HDC)wParam;
+            SetTextColor(hdc, COLOR_TEXT);
+            SetBkColor(hdc, COLOR_BG);
+            return (LRESULT)hBgBrush;
+        }
+        
+        case WM_DESTROY: {
+            if (hBgBrush) {
+                DeleteObject(hBgBrush);
+                hBgBrush = NULL;
+            }
+            return 0;
+        }
+        
+        case WM_COMMAND: {
+            if (LOWORD(wParam) == ID_BTN_WRITE) {
+                createFileOpWindow("Write");
+                return 0;
+            }
+            if (LOWORD(wParam) == ID_BTN_READ) {
+                createFileOpWindow("Read");
+                return 0;
+            }
+            if (LOWORD(wParam) == ID_BTN_METADATA) {
+                createFileOpWindow("Metadata");
+                return 0;
+            }
+            if (LOWORD(wParam) == ID_BTN_MODIFY) {
+                createFileOpWindow("Modify");
+                return 0;
+            }
+            if (LOWORD(wParam) == ID_BTN_LOGOUT) {
+                g_isLoggedIn = 0;
+                ShowWindow(hwnd, SW_HIDE);
+                DestroyWindow(hwnd);
+                createLoginWindow();
+                return 0;
+            }
+            break;
+        }
+        
+        case WM_CLOSE:
+            PostQuitMessage(0);
+            return 0;
+    }
+    return DefWindowProc(hwnd, msg, wParam, lParam);
+}
