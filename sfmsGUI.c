@@ -569,3 +569,95 @@ LRESULT CALLBACK FileOpWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
             SetFocus(hFilenameEdit);
             return 0;
         }
+
+case WM_CTLCOLORSTATIC: {
+            HDC hdc = (HDC)wParam;
+            HWND ctrl = (HWND)lParam;
+            if (ctrl == hDisplayStatic) {
+                SetBkColor(hdc, RGB(255, 255, 255));
+                return (LRESULT)GetStockObject(WHITE_BRUSH);
+            }
+            SetTextColor(hdc, COLOR_TEXT);
+            SetBkColor(hdc, COLOR_BG);
+            return (LRESULT)hBgBrush;
+        }
+        
+        case WM_CTLCOLOREDIT: {
+            HDC hdc = (HDC)wParam;
+            SetBkColor(hdc, RGB(255, 255, 255));
+            return (LRESULT)GetStockObject(WHITE_BRUSH);
+        }
+        
+        case WM_DESTROY: {
+            if (hBgBrush) {
+                DeleteObject(hBgBrush);
+                hBgBrush = NULL;
+            }
+            return 0;
+        }
+        
+        case WM_COMMAND: {
+            if (LOWORD(wParam) == ID_BTN_SUBMIT_LOGIN) {
+                char filename[MAX] = {0};
+                GetWindowText(hFilenameEdit, filename, MAX);
+                
+                if (strlen(filename) == 0) {
+                    showMessage(hwnd, "Error", "Please enter a filename.", 1);
+                    return 0;
+                }
+                
+                if (strchr(filename, '.') == NULL) {
+                    if (strlen(filename) + 4 < MAX) {
+                        strcat(filename, ".txt");
+                    }
+                }
+                
+                if (strcmp(operation, "Write") == 0) {
+                    char content[1000] = {0};
+                    GetWindowText(hContentEdit, content, 1000);
+                    
+                    writeToFile(filename, content);
+                    showMessage(hwnd, "Success", "File created successfully!", 0);
+                    DestroyWindow(hwnd);
+                }
+                else if (strcmp(operation, "Read") == 0) {
+                    char* content = readFromFile(filename);
+                    if (content) {
+                        SetWindowText(hDisplayStatic, "");
+                        SetWindowText(hDisplayStatic, content);
+                        free(content);
+                    } else {
+                        showMessage(hwnd, "Error", "File not found or cannot be read.", 1);
+                        SetWindowText(hDisplayStatic, "Error: File not found or cannot be read.");
+                    }
+                }
+                else if (strcmp(operation, "Metadata") == 0) {
+                    showFileMetadata(filename, hwnd);
+                }
+                else if (strcmp(operation, "Modify") == 0) {
+                    char newFilename[MAX] = {0};
+                    char newContent[1000] = {0};
+                    
+                    GetWindowText(hNewFilenameEdit, newFilename, MAX);
+                    GetWindowText(hNewContentEdit, newContent, 1000);
+                    
+                    modifyFileContent(filename, newFilename, newContent);
+                    showMessage(hwnd, "Success", "File modified successfully!", 0);
+                    DestroyWindow(hwnd);
+                }
+                return 0;
+            }
+            
+            if (LOWORD(wParam) == ID_BTN_EXIT) {
+                DestroyWindow(hwnd);
+                return 0;
+            }
+            break;
+        }
+        
+        case WM_CLOSE:
+            DestroyWindow(hwnd);
+            return 0;
+    }
+    return DefWindowProc(hwnd, msg, wParam, lParam);
+}
