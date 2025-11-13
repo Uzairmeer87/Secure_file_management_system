@@ -661,3 +661,160 @@ case WM_CTLCOLORSTATIC: {
     }
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
+
+void createMainWindow() {
+    WNDCLASS wc = {0};
+    wc.lpfnWndProc = MainWndProc;
+    wc.hInstance = GetModuleHandle(NULL);
+    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wc.lpszClassName = "SFMSMainClass";
+    
+    RegisterClass(&wc);
+    
+    g_hMainWnd = CreateWindow("SFMSMainClass", "Secure File Management System",
+                              WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
+                              400, 300, NULL, NULL, GetModuleHandle(NULL), NULL);
+}
+
+HWND createModernButton(HWND parent, const char* text, int x, int y, int w, int h, int id) {
+    HWND btn = CreateWindow("BUTTON", text, 
+                           WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON | BS_DEFPUSHBUTTON,
+                           x, y, w, h, parent, (HMENU)(INT_PTR)id, NULL, NULL);
+    if (g_hFont) {
+        SendMessage(btn, WM_SETFONT, (WPARAM)g_hFont, TRUE);
+    }
+    return btn;
+}
+
+HWND createLabel(HWND parent, const char* text, int x, int y, int w, int h) {
+    HWND lbl = CreateWindow("STATIC", text, WS_VISIBLE | WS_CHILD,
+                           x, y, w, h, parent, NULL, NULL, NULL);
+    if (g_hFont) {
+        SendMessage(lbl, WM_SETFONT, (WPARAM)g_hFont, TRUE);
+    }
+    return lbl;
+}
+
+HWND createEdit(HWND parent, int x, int y, int w, int h, int id, int isPassword) {
+    DWORD style = WS_VISIBLE | WS_CHILD | WS_BORDER | ES_LEFT;
+    if (isPassword) style |= ES_PASSWORD;
+    
+    HWND edit = CreateWindow("EDIT", "", style,
+                            x, y, w, h, parent, (HMENU)(INT_PTR)id, NULL, NULL);
+    if (g_hFont) {
+        SendMessage(edit, WM_SETFONT, (WPARAM)g_hFont, TRUE);
+    }
+    return edit;
+}
+
+void initFonts() {
+    g_hFont = CreateFont(18, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+                        DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                        CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "Segoe UI");
+    
+    g_hTitleFont = CreateFont(24, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
+                             DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                             CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "Segoe UI");
+}
+
+void createLoginWindow() {
+    WNDCLASS wc = {0};
+    wc.lpfnWndProc = LoginWndProc;
+    wc.hInstance = GetModuleHandle(NULL);
+    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wc.hbrBackground = CreateSolidBrush(COLOR_BG);
+    wc.lpszClassName = "SFMSLoginClass";
+    
+    RegisterClass(&wc);
+    
+    g_hLoginWnd = CreateWindow("SFMSLoginClass", "Login - Secure File Management",
+                               WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
+                               CW_USEDEFAULT, CW_USEDEFAULT, 400, 320,
+                               NULL, NULL, GetModuleHandle(NULL), NULL);
+    
+    ShowWindow(g_hLoginWnd, SW_SHOW);
+    UpdateWindow(g_hLoginWnd);
+}
+
+void createRegisterWindow() {
+    WNDCLASS wc = {0};
+    wc.lpfnWndProc = RegisterWndProc;
+    wc.hInstance = GetModuleHandle(NULL);
+    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wc.hbrBackground = CreateSolidBrush(COLOR_BG);
+    wc.lpszClassName = "SFMSRegisterClass";
+    
+    RegisterClass(&wc);
+    
+    g_hRegisterWnd = CreateWindow("SFMSRegisterClass", "Register - Secure File Management",
+                                  WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
+                                  CW_USEDEFAULT, CW_USEDEFAULT, 380, 340,
+                                  NULL, NULL, GetModuleHandle(NULL), NULL);
+    
+    ShowWindow(g_hRegisterWnd, SW_SHOW);
+    UpdateWindow(g_hRegisterWnd);
+}
+
+void createMainMenuWindow() {
+    WNDCLASS wc = {0};
+    wc.lpfnWndProc = MainMenuWndProc;
+    wc.hInstance = GetModuleHandle(NULL);
+    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wc.hbrBackground = CreateSolidBrush(COLOR_BG);
+    wc.lpszClassName = "SFMSMenuClass";
+    
+    RegisterClass(&wc);
+    
+    g_hMainMenuWnd = CreateWindow("SFMSMenuClass", "Main Menu - Secure File Management",
+                                  WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
+                                  CW_USEDEFAULT, CW_USEDEFAULT, 450, 300,
+                                  NULL, NULL, GetModuleHandle(NULL), NULL);
+    
+    ShowWindow(g_hMainMenuWnd, SW_SHOW);
+    UpdateWindow(g_hMainMenuWnd);
+}
+
+void createFileOpWindow(const char* operation) {
+    WNDCLASS wc = {0};
+    wc.lpfnWndProc = FileOpWndProc;
+    wc.hInstance = GetModuleHandle(NULL);
+    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wc.hbrBackground = CreateSolidBrush(COLOR_BG);
+    wc.lpszClassName = "SFMSFileOpClass";
+    
+    RegisterClass(&wc);
+    
+    int height = 360;
+    if (strcmp(operation, "Modify") == 0) height = 400;
+    if (strcmp(operation, "Read") == 0) height = 360;
+    if (strcmp(operation, "Metadata") == 0) height = 250;
+    
+    char opCopy[20];
+    strcpy(opCopy, operation);
+    
+    g_hFileOpWnd = CreateWindow("SFMSFileOpClass", "File Operation",
+                                WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
+                                CW_USEDEFAULT, CW_USEDEFAULT, 380, height,
+                                NULL, NULL, GetModuleHandle(NULL), opCopy);
+    
+    ShowWindow(g_hFileOpWnd, SW_SHOW);
+    UpdateWindow(g_hFileOpWnd);
+}
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+    initFonts();
+    
+    createLoginWindow();
+    
+    MSG msg;
+    while (GetMessage(&msg, NULL, 0, 0)) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+    
+    if (g_hFont) DeleteObject(g_hFont);
+    if (g_hTitleFont) DeleteObject(g_hTitleFont);
+    
+    return 0;
+}
