@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>SFMS - <%= title || 'Secure File Manager' %></title>
+  <link rel="stylesheet" href="/style.css?v=2" />
+</head>
+<body>
+  <header>
+    <h1>SFMS</h1>
+    <nav>
+      <% if (user) { %>
+        <span>Welcome, <strong><%= user %></strong></span>
+        <form action="/logout" method="post" style="display:inline;">
+          <button type="submit">Logout</button>
+        </form>
+        <a href="/files/dashboard">Dashboard</a>
+      <% } else { %>
+        <a href="/">Home</a>
+        <a href="/login">Login</a>
+        <a href="/register">Register</a>
+      <% } %>
+    </nav>
+  </header>
+
+  <main>
+    <%- body %>
+  </main>
+
+  <footer>
+    <small>SFMS - Express + EJS demo</small>
+  </footer>
+</body>
+</html>
