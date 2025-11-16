@@ -1,0 +1,11 @@
+<section>
+  <h2>Metadata: <%= filename %></h2>
+  <ul>
+    <li>Size: <%= stat.size %> bytes</li>
+    <li>Created: <%= stat.birthtime %></li>
+    <li>Modified: <%= stat.mtime %></li>
+    <li>Last Accessed: <%= stat.atime %></li>
+    <li>Is File: <%= stat.isFile() %></li>
+  </ul>
+  <a href="/files/dashboard">Back</a>
+</section>

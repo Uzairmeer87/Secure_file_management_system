@@ -1,0 +1,9 @@
+<section>
+  <h2>Secure File Management System</h2>
+  <p>This is a simple web-based version of your C SFMS. Register and manage files in your private folder.</p>
+  <% if (!user) { %>
+    <a class="btn" href="/register">Get Started</a>
+  <% } else { %>
+    <a class="btn" href="/files/dashboard">Go to Dashboard</a>
+  <% } %>
+</section>
